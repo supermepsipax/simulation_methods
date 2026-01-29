@@ -41,7 +41,7 @@ nodes(3, :) = nodes(2, :) + L_elem * [cos(lambda), sin(lambda)];
 nodes(4, :) = nodes(3, :) + L_elem * [cos(delta), sin(delta)];
 nodes(5, :) = nodes(4, :) + [L_elem, 0];
 
-elem_angles = [beta, beta, lambda, delta];
+elem_angles = [beta, lambda, delta, 0];
 
 %% ========================================================================
 %  SECTION 3: Helper Functions for local stiffness matrix 
