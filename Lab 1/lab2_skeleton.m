@@ -4,6 +4,10 @@
 
 clear; clc; close all;
 
+
+
+function [z_all, T_full] = calculateAllGridPoints(N, v)
+
 %% ========== PARAMETERS ==========
 L = 10;          % Pipe length
 a = 1;           % Coil start position
@@ -14,10 +18,6 @@ rho = 1;         % Fluid density
 C = 1;           % Heat capacity
 T0 = 400;        % Left boundary temperature (z=0)
 Tout = 300;      % Right boundary temperature (z=L)
-
-% Parameters to vary:
-v = 0;           % Fluid velocity (try 0, 0.1, 0.5, 1)
-N = 9;           % Number of interior grid points (try 9, 19, 39, 79)
 
 %% ========== GRID SETUP ==========
 h = L / (N + 1);              % Grid spacing
@@ -33,9 +33,14 @@ z_interior = z_all(2:end-1);  % Interior points only (N points)
 Qvec = zeros(N, 1);
 for i = 1:N
     z_i = z_interior(i);
+    if z_i < a
+        Qvec(i) = 0;
+    elseif z_i >= a && z_i <= b
+        Qvec(i) = Q0 * sin(pi * (z_i - a) / (b - a));
+    else
+        Qvec(i) = 0;
+    end
 
-    % TODO: Implement the piecewise Q function
-    % Hint: Use if/elseif/else to check which region z_i is in
 
 end
 
@@ -69,9 +74,9 @@ end
 %       l = lower diagonal coefficient (for T_{i-1})
 
 % TODO: Define your coefficients based on your discretization
-% coeff_main = ... ;   % Coefficient of T_i
-% coeff_upper = ... ;  % Coefficient of T_{i+1}
-% coeff_lower = ... ;  % Coefficient of T_{i-1}
+coeff_lower = -(kappa/(h^2) + v*rho*C/(2*h))
+coeff_main = (2*kappa/(h^2))
+coeff_upper = (v*rho*C/(2*h) - kappa/(h^2))
 
 % Build diagonal vectors
 main_diag = zeros(N, 1);    % Length N
@@ -80,14 +85,11 @@ lower_diag = zeros(N-1, 1); % Length N-1
 
 % TODO: Fill in the diagonal vectors with your coefficients
 % For uniform coefficients (same at every point):
-%   main_diag(:) = coeff_main;
-%   upper_diag(:) = coeff_upper;
-%   lower_diag(:) = coeff_lower;
+main_diag(:) = coeff_main;
+upper_diag(:) = coeff_upper;
+lower_diag(:) = coeff_lower;
 
 % Assemble the matrix using diag()
-% diag(v, 0) puts vector v on the main diagonal
-% diag(v, 1) puts vector v on the first upper diagonal
-% diag(v, -1) puts vector v on the first lower diagonal
 A = diag(main_diag, 0) + diag(upper_diag, 1) + diag(lower_diag, -1);
 
 %% ========== BUILD RIGHT-HAND SIDE VECTOR b ==========
@@ -99,8 +101,8 @@ b = Qvec;
 % At i=N: equation involves T_{N+1} (known) -> move to RHS
 %
 % TODO: Add boundary contributions
-% b(1) = b(1) - (coeff_lower) * T0;
-% b(N) = b(N) - (coeff_upper) * Tout;
+b(1) = b(1) - (coeff_lower) * T0;
+b(N) = b(N) - (coeff_upper) * Tout;
 
 %% ========== SOLVE THE SYSTEM ==========
 T_interior = A \ b;
@@ -109,13 +111,14 @@ T_interior = A \ b;
 % Include boundary values
 T_full = [T0; T_interior; Tout];
 
-%% ========== PLOT RESULTS ==========
-figure;
-plot(z_all, T_full, '-o');
-xlabel('z');
-ylabel('T(z)');
-title(sprintf('Temperature Distribution (N=%d, v=%.1f)', N, v));
-grid on;
+% %% ========== PLOT RESULTS ==========
+% figure;
+% plot(z_all, T_full, '-o');
+% xlabel('z');
+% ylabel('T(z)');
+% title(sprintf('Temperature Distribution (N=%d, v=%.1f)', N, v));
+% grid on;
+end
 
 %% ========== CONVERGENCE STUDY (Task 1) ==========
 % TODO: Run for N = 9, 19, 39, 79 with v = 0
@@ -126,28 +129,29 @@ grid on;
 %   2. Turn the code above into a function and call it multiple times
 %
 % Example structure:
-% figure;
-% hold on;
-% for N = [9, 19, 39, 79]
-%     % ... compute T_full for this N ...
-%     plot(z_all, T_full);
-% end
-% hold off;
-% legend('N=9', 'N=19', 'N=39', 'N=79');
+figure;
+hold on;
+for N = [9, 19, 39, 79]
+    [z_all, T_full] = calculateAllGridPoints(N, 0);
+    plot(z_all, T_full);
+end
+hold off;
+legend('N=9', 'N=19', 'N=39', 'N=79');
 
 %% ========== CONVECTION STUDY (Task 2) ==========
 % TODO: Use N = 79 and run for v = 0, 0.1, 0.5, 1
 %       Use subplot to show all four in one figure
 %
 % Example structure:
-% figure;
-% v_values = [0, 0.1, 0.5, 1];
-% for idx = 1:4
-%     v = v_values(idx);
-%     % ... compute T_full for this v ...
-%     subplot(2, 2, idx);
-%     plot(z_all, T_full);
-%     title(sprintf('v = %.1f', v));
-%     xlabel('z');
-%     ylabel('T(z)');
-% end
+figure;
+v_values = [0, 0.1, 0.5, 1];
+for idx = 1:4
+    v = v_values(idx);
+    disp(v)
+    [z_all, T_full] = calculateAllGridPoints(79, v);
+    subplot(2, 2, idx);
+    plot(z_all, T_full);
+    title(sprintf('v = %.1f', v));
+    xlabel('z');
+    ylabel('T(z)');
+end
