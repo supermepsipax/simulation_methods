@@ -130,3 +130,36 @@ plot(T,E)
 xlabel('t'),ylabel('E')
 title('Harmonic Oscillator, Implicit Midpoint Energy vs time')
 pause
+
+
+
+% Verlet Method
+u1 = 1; u2 = 0; omega2 = 2; h = 0.1; N = 100;
+U1 = zeros(N+1,1); U2 = zeros(N+1,1); T = zeros(N+1,1); % Adjust for N-1 steps
+U1(1) = u1; U1(2) = u1 + h*u2 - (h^2 * omega2 / 2) * u1;
+for k = 2:N
+    u1_new = 2*U1(k) - U1(k-1) - h^2 * omega2 * U1(k);
+    U1(k+1) = u1_new;
+    U2(k) = (U1(k+1) - U1(k-1)) / (2*h);
+    T(k) = (k-1)*h;
+    E(k) = 0.5*omega2*U1(k)^2 + 0.5*U2(k)^2;
+end
+
+% trajectory Plot
+plot(T,U1,T,U2,'o')
+xlabel('t'), ylabel('u1, u2')
+title('Harmonic Oscillator, Verlet trajectories')
+pause
+
+% Phase Portrait Plot
+plot(U1, U2,'o')
+axis equal
+xlabel('u1'), ylabel('u2')
+title('Harmonic Oscillator, Verlet phase portrait')
+pause
+
+% Energy Plot
+plot(T,E)
+xlabel('t'), ylabel('E')
+title('Harmonic Oscillator, Verlet Energy vs time')
+pause
