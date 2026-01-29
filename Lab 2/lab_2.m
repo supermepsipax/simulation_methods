@@ -44,10 +44,11 @@ nodes(5, :) = nodes(4, :) + [L_elem, 0];
 elem_angles = [beta, beta, lambda, delta];
 
 %% ========================================================================
-%  SECTION 3: Define Helper Functions
+%  SECTION 3: Helper Functions for local stiffness matrix 
+%             + local -> global transformation
 %  ========================================================================
 
-% Function to compute local stiffness matrix (6x6)
+% Function to compute local stiffness matrix
 % Equation 7 in PDF
 function ke = local_stiffness(E, A, I, L)
 
@@ -107,10 +108,9 @@ end
 %  SECTION 4: Assemble Global Stiffness Matrix
 %  ========================================================================
 
-% Initialize global stiffness matrix
+% global stiffness matrix
 K = zeros(n_dof, n_dof);
 
-% Loop over each element
 for e = 1:n_elem
     start_node = e;
     end_node = e + 1;
@@ -123,12 +123,10 @@ for e = 1:n_elem
 
     Ke = T' * ke * T;
 
-    % --- Step 4f: Determine global DOF indices ---
-    % Node n1 has DOFs: 3*(n1-1)+1, 3*(n1-1)+2, 3*(n1-1)+3
-    % Node n2 has DOFs: 3*(n2-1)+1, 3*(n2-1)+2, 3*(n2-1)+3
+    % global DOF indices
     dof = [3*(start_node-1)+(1:3), 3*(end_node-1)+(1:3)];
 
-    % --- Step 4g: Add element matrix to global matrix ---
+    % add element matrix to global matrix
     K(dof, dof) = K(dof, dof) + Ke;
 end
 
@@ -139,28 +137,19 @@ end
 % Create force vector
 F = zeros(n_dof, 1);
 
-% TODO: Apply the external force (20 N in X-direction at node 5)
-% Which DOF corresponds to X-displacement at node 5?
-% F(...) = F_applied;
+F(14) = -F_applied;
 
 % Apply boundary conditions (Node 1 is fixed: D1 = D2 = D3 = 0)
-% Method: Partition approach - solve only for free DOFs
-
-% Fixed DOFs (node 1)
 fixed_dof = [1, 2, 3];
 
-% Free DOFs (nodes 2-5)
 free_dof = setdiff(1:n_dof, fixed_dof);
 
-% TODO: Solve the reduced system
-% Extract the submatrices for free DOFs and solve:
-% K_reduced = K(free_dof, free_dof);
-% F_reduced = F(free_dof);
-% D_free = K_reduced \ F_reduced;
+K_reduced = K(free_dof, free_dof);
+F_reduced = F(free_dof);
+D_free = K_reduced \ F_reduced;
 
-% Assemble full displacement vector
 D = zeros(n_dof, 1);
-% D(free_dof) = D_free;
+D(free_dof) = D_free;
 
 %% ========================================================================
 %  SECTION 6: Post-Processing and Results
@@ -170,16 +159,13 @@ D = zeros(n_dof, 1);
 % Each row = one node, columns = [Dx, Dz, theta]
 D_reshaped = reshape(D, 3, n_nodes)';
 
-% Extract displacements
 Dx = D_reshaped(:, 1);      % X-displacements
 Dz = D_reshaped(:, 2);      % Z-displacements
 theta = D_reshaped(:, 3);   % Rotations
 
-% Compute deformed node positions
 X_def = nodes(:, 1) + Dx;
 Z_def = nodes(:, 2) + Dz;
 
-% Compute total displacement at each node
 D_total = sqrt(Dx.^2 + Dz.^2);
 
 %% ========================================================================
@@ -244,10 +230,6 @@ hold off;
 %  SECTION 9: Verification (Optional)
 %  ========================================================================
 
-% Compare with expected results from Appendix 2:
-% - Maximum displacement at tip: ~0.08 m
-% - X-displacement at tip: ~0.036 m
-% - Z-displacement at tip: ~0.071 m
 
 fprintf('\n========================================\n');
 fprintf('   VERIFICATION\n');
