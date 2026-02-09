@@ -37,26 +37,26 @@ def pbc_dist(x1,y1,x2,y2,bx,by):
     return dx, dy, math.sqrt(dx*dx + dy*dy)
 
 # number of particles TO FILL
-n = 
+n = 40
 
 # box dimension
 bx = 4
 by = 4
 
 # temperature TO FILL
-Temp = 
+Temp = 300
 
 # mass TO FILL
-mass = 
+mass = 39.95
 
 # time step TO FILL
-dt =  
+dt = 0.01 
 # number of time step TO FILL
-nsteps = 
+nsteps =  4000
 
 #Lennard-Jones potential constants TO FILL
-sig = 
-epsilon=
+sig = 0.34
+epsilon=0.979
  
 # Start condition
 x = []
